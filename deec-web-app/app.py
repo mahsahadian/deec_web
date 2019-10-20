@@ -1,24 +1,17 @@
-from pymongo import MongoClient
-import os
+import datetime
 
+from pymongo import MongoClient
 from Algorithms import DEEC
-from graph import build_graph, k_means
 import matplotlib.pyplot as plt
-from flask import Flask, request, render_template, abort, Response
+from flask import Flask, request, render_template
 import io
 import base64
 import numpy as np
 import pandas as pd
-w1 = np.random.uniform(0.8,1.0,(50,2))
-w2 = np.random.uniform(0.0,0.2,(50,2))
-X = np.concatenate((w1,w2),axis=0)
 app = Flask(__name__)
-
 global ch_listo, mk_listo, ap_listo, cf_listo
 ch_listo, mk_listo, ap_listo, cf_listo = [], [], [], []
-client = MongoClient(os.environ['DB_PORT_27017_TCP_ADDR'], 27017)
-db = client.basketdb
-
+client = MongoClient('localhost', 27017)
 @app.route("/handleUpload", methods=['POST'])
 def handleFileUpload():
     if 'photo' in request.files:
@@ -29,24 +22,11 @@ def handleFileUpload():
     #return redirect(url_for('fileFrontPage'))
 @app.route('/')
 def index():
-    _items = db.basketdb.find()
-    #items = [item for item in _items]
-    #total = sum([float(item["price"]) for item in items])
-    # These coordinates could be stored in DB
-    x1 = [0, 1, 2, 3, 4]
-    y1 = [10, 30, 40, 5, 50]
-    x2 = [0, 1, 2, 3, 4]
-    y2 = [50, 30, 20, 10, 50]
-    x3 = [0, 1, 2, 3, 4]
-    y3 = [0, 30, 10, 5, 30]
-
-    graph1_url = build_graph(x1, y1);
-    graph2_url = build_graph(x2, y2);
-    graph3_url = build_graph(x3, y3);
-
+    w1 = np.random.uniform(0.8, 1.0, (50, 2))
+    w2 = np.random.uniform(0.0, 0.2, (50, 2))
+    X = np.concatenate((w1, w2), axis=0)
     clf = DEEC()
     clf.fit(X)
-
     for centroid in clf.centroids:
         plt.scatter(clf.centroids[centroid][0], clf.centroids[centroid][1],
                     marker="o", color="k", s=50, linewidths=2)
@@ -62,9 +42,6 @@ def index():
     graph_url = base64.b64encode(img.getvalue()).decode()
     plt.close()
     image = 'data:image/png;base64,{}'.format(graph_url)
-    return render_template('basket.html',
-                           graph1=image,
-                           graph2=graph2_url,
-                           graph3=graph3_url)
+    return render_template('basket.html',graph1=image)
 if __name__ == "__main__":
     app.run(host='0.0.0.0', debug=True)
